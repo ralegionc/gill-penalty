@@ -1,0 +1,17 @@
+SpecCode,sci,family,tuna,mass_g,temp_c,vo2_mg_kg_h,flux_mg_m2_h
+2965,Catostomus commersonii,Catostomidae,False,190.0,20.0,658.0,5308.722778994279
+3022,Ameiurus nebulosus,Ictaluridae,False,333.0,20.0,496.0,4736.671593928487
+271,Carassius auratus,Cyprinidae,False,66.0,15.0,629.0,4519.276400388174
+239,Oncorhynchus mykiss,Salmonidae,False,6.5,20.0,1313.5,4508.75036819095
+1450,Cyprinus carpio,Cyprinidae,False,250.0,20.0,865.0,4429.634798858982
+1342,Pleuronectes platessa,Pleuronectidae,False,281.0,15.0,183.0,1925.6883245644963
+695,Limanda limanda,Pleuronectidae,False,396.0,15.0,171.38,1548.473828315557
+3516,Sander vitreus,Percidae,False,226.0,23.0,181.0,1129.2772839429747
+69,Gadus morhua,Gadidae,False,188.10001,10.0,183.0,1099.4926086953087
+1341,Platichthys flesus,Pleuronectidae,False,395.0,15.0,214.98,1039.3938158323406
+296,Anguilla rostrata,Anguillidae,False,262.0,15.0,265.0,814.9289503997759
+107,Katsuwonus pelamis,Scombridae,True,2790.0,23.5,778.0,487.1735036202703
+785,Mugil cephalus,Mugilidae,False,140.0,20.0,483.0,438.38325908521074
+35,Anguilla anguilla,Anguillidae,False,80.0,25.0,257.0,265.15221964861433
+139,Squalus acanthias,Squalidae,False,1854.0,10.0,88.4,262.0999876104425
+2467,Echeneis naucrates,Echeneidae,False,487.0,24.0,116.0,218.15720501661582

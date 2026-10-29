@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Gill Penalty</title>
+<meta name="description" content="Build an animal, choose gills or lungs, and see how warm it can stay in the sea.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,700;1,400&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: controls beside a live chart; under both, a heat budget whose loss bar is drawn to
+   the same scale as the heat burned, so with plain gills it runs off the page. */
+:root {
+  --abyss: #0a0d12;        /* the sea at night */
+  --panel: #0f141b;
+  --rule: #222a35;
+  --bone: #e8e4da;
+  --muted: #8a8f98;
+  --water: #5ec8d8;        /* gills, oxygen, the water's temperature */
+  --heat: #f6b73c;         /* metabolic heat, exchangers */
+  --breath: #9fb7d9;       /* lungs and the air-breathers */
+  --loss: #c2513f;         /* heat thrown away past breakeven */
+  --display: "Spectral", Georgia, serif;
+  --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--abyss); color: var(--bone); }
+body { font: 15px/1.55 var(--body); overflow-x: hidden; }
+main { max-width: 1240px; margin: 0 auto; padding: 40px 24px 56px; }
+header { display: grid; gap: 10px; margin-bottom: 28px; max-width: 760px; }
+h1 { font: 700 clamp(38px, 6vw, 64px)/0.95 var(--display); margin: 0; letter-spacing: -0.01em; }
+h1 em { font-style: italic; font-weight: 400; color: var(--water); }
+.dek { margin: 0; color: var(--muted); font-size: 16.5px; text-wrap: pretty; }
+
+.stage { display: grid; grid-template-columns: 340px 1fr; gap: 28px; align-items: start; }
+.controls { display: grid; gap: 18px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+button.chip {
+  font: 500 12.5px var(--body); color: var(--muted); background: transparent; border: 1px solid var(--rule);
+  border-radius: 999px; padding: 5px 11px; cursor: pointer;
+}
+button.chip:hover { color: var(--bone); border-color: var(--muted); }
+button.chip[aria-pressed="true"] { color: var(--abyss); background: var(--bone); border-color: var(--bone); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 600 13px var(--body); padding: 9px; background: transparent; color: var(--muted); border: 0; cursor: pointer; }
+.seg button[aria-pressed="true"][data-v="gills"] { background: color-mix(in srgb, var(--water) 18%, transparent); color: var(--water); }
+.seg button[aria-pressed="true"][data-v="lungs"] { background: color-mix(in srgb, var(--breath) 18%, transparent); color: var(--breath); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--heat); outline-offset: 2px; }
+.ctl { display: grid; gap: 4px; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.ctl output { font: 500 13px var(--mono); color: var(--bone); }
+.ctl.off { opacity: 0.35; }
+input[type=range] { width: 100%; accent-color: var(--heat); }
+.ctl small { color: #5f6570; font-size: 11.5px; }
+
+.chart { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 10px 6px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { font-family: var(--body); }
+
+.verdict { margin: 30px 0 10px; font: 500 clamp(22px, 3vw, 30px)/1.2 var(--display); text-wrap: balance; max-width: 900px; }
+.verdict b { font-weight: 700; }
+.verdict .ok { color: var(--water); }
+.verdict .bad { color: var(--loss); }
+
+/* the signature: the loss bar shares the burned bar's scale and is allowed to leave the page */
+.budget { display: grid; gap: 10px; margin: 18px 0 8px; position: relative; }
+.row { display: grid; grid-template-columns: 210px 1fr; align-items: center; gap: 14px; }
+.row .name { font-size: 13px; color: var(--muted); }
+.row .name b { display: block; font: 500 14px var(--mono); color: var(--bone); }
+.track { position: relative; height: 26px; }
+.bar { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; transition: width 0.45s cubic-bezier(.2,.7,.2,1); }
+.bar.burn { background: var(--heat); box-shadow: 0 0 22px color-mix(in srgb, var(--heat) 45%, transparent); }
+.bar.lose { background: linear-gradient(90deg, var(--water) 0 var(--even, 100%), var(--loss) var(--even, 100%));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--loss) 40%, transparent); }
+.bar.lose.lungs { background: var(--breath); box-shadow: none; }
+.even { position: absolute; top: -6px; bottom: -6px; width: 0; border-left: 1px dashed var(--bone); opacity: 0.55; }
+.even span { position: absolute; top: -18px; left: 4px; font: 11px var(--mono); color: var(--muted); white-space: nowrap; }
+.overflow { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font: 600 13px var(--mono); color: var(--bone);
+  background: var(--loss); padding: 2px 8px; border-radius: 3px; display: none; }
+.budget-wrap { overflow: hidden; margin-right: -24px; padding-right: 24px; }
+
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin-top: 26px; }
+.fact { background: var(--abyss); padding: 14px 16px; display: grid; gap: 2px; }
+.fact .k { font-size: 12px; color: var(--muted); }
+.fact .v { font: 500 20px var(--mono); }
+.fact .s { font-size: 12px; color: #6d737d; }
+
+.notes { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; color: var(--muted); font-size: 13.5px; }
+.notes h2 { font: 700 18px var(--display); color: var(--bone); margin: 0 0 6px; }
+.notes p { margin: 0 0 10px; text-wrap: pretty; }
+.notes code { font: 12.5px var(--mono); color: var(--bone); }
+a { color: var(--water); }
+
+@media (max-width: 860px) {
+  main { padding: 24px 16px 40px; }
+  .stage { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; gap: 4px; }
+  .facts { grid-template-columns: 1fr 1fr; }
+  .notes { grid-template-columns: 1fr; }
+  .budget-wrap { margin-right: -16px; padding-right: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>The Gill <em>Penalty</em></h1>
+  <p class="dek">Blood leaves a gill at the temperature of the sea. Build an animal, choose how it breathes, and see how warm it can stay.</p>
+</header>
+
+<section class="stage">
+  <div class="controls">
+    <div class="presets" role="group" aria-label="Start from an animal" id="presets"></div>
+    <div class="seg" role="group" aria-label="Breathing">
+      <button data-v="gills" aria-pressed="true">Gills</button>
+      <button data-v="lungs" aria-pressed="false">Lungs</button>
+    </div>
+    <div class="ctl"><label for="mass">Body mass <output id="mass-o"></output></label>
+      <input id="mass" type="range" min="-1" max="5.3" step="0.01"></div>
+    <div class="ctl"><label for="tw">Water temperature <output id="tw-o"></output></label>
+      <input id="tw" type="range" min="-2" max="30" step="0.5"></div>
+    <div class="ctl"><label for="tb">Body temperature <output id="tb-o"></output></label>
+      <input id="tb" type="range" min="-2" max="40" step="0.1"></div>
+    <div class="ctl" id="cap-c"><label for="cap">Oxygen the blood carries <output id="cap-o"></output></label>
+      <input id="cap" type="range" min="0.04" max="0.25" step="0.005">
+      <small>mL of oxygen per mL of blood: sharks about 0.06, tunas and mammals about 0.2</small></div>
+    <div class="ctl" id="eff-c"><label for="eff">Heat exchanger before the gills <output id="eff-o"></output></label>
+      <input id="eff" type="range" min="0" max="0.995" step="0.005">
+      <small>share of outgoing heat handed back to incoming blood</small></div>
+  </div>
+  <figure class="chart" aria-label="Temperature above the water against body mass">
+    <svg id="plot" viewBox="0 0 760 520" role="img"></svg>
+  </figure>
+</section>
+
+<p class="verdict" id="verdict" aria-live="polite"></p>
+
+<div class="budget-wrap">
+<div class="budget" id="budget">
+  <div class="row"><div class="name">Heat from food burned<b id="burn-v"></b></div>
+    <div class="track"><div class="bar burn" id="burn"></div></div></div>
+  <div class="row"><div class="name">Heat thrown away by breathing<b id="lose-v"></b></div>
+    <div class="track"><div class="bar lose" id="lose"></div><div class="even" id="even"><span>breakeven</span></div>
+      <div class="overflow" id="over"></div></div></div>
+</div>
+</div>
+
+<div class="facts">
+  <div class="fact"><span class="k">Highest temperature these gills allow</span><span class="v" id="f-ceil"></span><span class="s" id="f-ceil-s"></span></div>
+  <div class="fact"><span class="k">Exchanger needed to break even</span><span class="v" id="f-need"></span><span class="s">gills then take all the heat; skin gets none</span></div>
+  <div class="fact"><span class="k" id="f-area-k">Gill area needed</span><span class="v" id="f-area"></span><span class="s" id="f-area-s"></span></div>
+  <div class="fact"><span class="k" id="f-flow-k">Water pumped</span><span class="v" id="f-flow"></span><span class="s" id="f-flow-s"></span></div>
+</div>
+
+<section class="notes">
+  <div>
+    <h2>Why about one kelvin</h2>
+    <p>Each mL of oxygen burned releases about 19.6 J. A mL of blood carries at most its oxygen capacity, and warms by 1 K for every 3.7 J. Blood that left the gills at sea temperature can therefore be warmed by at most <code>19.6 &times; capacity / 3.7</code> kelvin before it returns, about 1 K for the richest blood. Body size and effort cancel out: a bigger or busier animal burns more oxygen and must push proportionally more blood past its gills.</p>
+    <p>Heat crosses the gill wall thousands of times more readily than oxygen does, so no gill can load oxygen without first dumping the heat.</p>
+  </div>
+  <div>
+    <h2>How the numbers are made</h2>
+    <p>Metabolism is an endotherm's: 2.5 times Kleiber's basal rate. Gill area uses the highest oxygen uptake per square metre of gill recorded in FishBase (5,300 mg per m&sup2; per hour, active white sucker at 20 &deg;C); a gill extracts 60% of the oxygen in the water. Lungs warm and humidify air taken in at the water's temperature and remove 6% of its volume as oxygen. Skin, fat and nasal heat exchange are left out, so the lung figures are upper bounds and the gill figures assume a perfect insulator.</p>
+    <p>Animals on the chart and their sources are in the <a href="https://github.com/ralegionc/gill-penalty">repository</a>.</p>
+  </div>
+</section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+const Q_OX = 19.6, C_BLOOD = 3.7, C_AIR = 1.2e-3, L_VAP = 2.43, FLUX = DATA.best_flux, EXTRACT_WATER = 0.6, O2_AIR = 0.06;
+const ceiling = cap => Q_OX * cap / C_BLOOD;
+const satVap = t => 611.2 * Math.exp(17.62 * t / (243.12 + t)) * 0.018015 / (8.314 * (t + 273.15));
+const lungPenalty = (tb, ta) => (C_AIR * (tb - ta) + L_VAP * Math.max(0, satVap(tb) - 0.9 * satVap(ta))) / (Q_OX * O2_AIR);
+function o2sea(t) {  // Weiss 1970, mL per mL at 35 psu
+  const T = t + 273.15, S = 35;
+  return Math.exp(-173.4292 + 249.6339 * 100 / T + 143.3483 * Math.log(T / 100) - 21.8492 * T / 100
+    + S * (-0.033096 + 0.014259 * T / 100 - 0.0017 * (T / 100) ** 2)) / 1000;
+}
+const kleiber = m => 3.39 * m ** 0.75;
+
+const PRESETS = [
+  { name: "Trout", mode: "gills", mass: 1, tw: 12, tb: 12.2, cap: 0.1, eff: 0 },
+  { name: "Bluefin tuna", mode: "gills", mass: 250, tw: 8, tb: 29, cap: 0.18, eff: 0.955 },
+  { name: "Opah", mode: "gills", mass: 40, tw: 10, tb: 14.8, cap: 0.1, eff: 0.89 },
+  { name: "Blue whale with gills", mode: "gills", mass: 100000, tw: 10, tb: 36, cap: 0.2, eff: 0 },
+  { name: "Blue whale", mode: "lungs", mass: 100000, tw: 10, tb: 36, cap: 0.2, eff: 0 },
+];
+const S = { ...PRESETS[3] };
+const $ = id => document.getElementById(id);
+const fmt = (x, d = 0) => x.toLocaleString("en", { maximumFractionDigits: d, minimumFractionDigits: d });
+const watts = w => w >= 1e6 ? fmt(w / 1e6, 1) + " MW" : w >= 1e3 ? fmt(w / 1e3, w >= 1e4 ? 0 : 1) + " kW" : fmt(w, w >= 10 ? 0 : 1) + " W";
+const short = (x, d) => x.toLocaleString("en", { maximumFractionDigits: d });
+const kg = m => m >= 1000 ? short(m / 1000, m >= 1e4 ? 0 : 1) + " t" : m >= 1 ? short(m, m >= 10 ? 0 : 1) + " kg" : short(m * 1000, 0) + " g";
+
+// ---- chart --------------------------------------------------------------------------------
+const W = 760, H = 520, M = { l: 54, r: 16, t: 14, b: 42 };
+const X0 = Math.log10(0.1), X1 = Math.log10(2e5), Y0 = Math.log10(0.05), Y1 = Math.log10(60);
+const sx = m => M.l + (Math.log10(m) - X0) / (X1 - X0) * (W - M.l - M.r);
+const sy = k => M.t + (Y1 - Math.log10(Math.max(k, 0.05))) / (Y1 - Y0) * (H - M.t - M.b);
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e);
+  return e;
+}
+const svg = $("plot");
+const LABELS = {  // [text, dx, dy, anchor]
+  "Atlantic bluefin tuna": ["bluefin muscle", 9, 16], "Opah": ["opah", 9, 4], "Skipjack tuna (lab)": ["skipjack muscle", 9, 4],
+  "Skipjack tuna (lab) blood": ["skipjack blood", 9, 4], "Basking shark": ["basking shark?", -9, -8, "end"],
+  "Swordfish": ["swordfish brain", -9, 4, "end"], "Leatherback turtle": ["leatherback", 9, 12],
+  "Weddell seal": ["seal", 9, 4], "Blue whale": ["blue whale", -9, 16, "end"],
+};
+function drawStatic() {
+  const defs = el("defs", {}, svg);
+  const f = el("filter", { id: "glow", x: "-50%", y: "-50%", width: "200%", height: "200%" }, defs);
+  el("feGaussianBlur", { stdDeviation: "4", result: "b" }, f);
+  const mg = el("feMerge", {}, f); el("feMergeNode", { in: "b" }, mg); el("feMergeNode", { in: "SourceGraphic" }, mg);
+  const g = el("linearGradient", { id: "band", x1: 0, y1: 1, x2: 0, y2: 0 }, defs);
+  el("stop", { offset: "0", "stop-color": "#5ec8d8", "stop-opacity": "0.22" }, g);
+  el("stop", { offset: "1", "stop-color": "#5ec8d8", "stop-opacity": "0.02" }, g);
+  for (const k of [0.1, 0.3, 1, 3, 10, 30]) {
+    el("line", { x1: M.l, x2: W - M.r, y1: sy(k), y2: sy(k), stroke: "#1c222b" }, svg);
+    el("text", { x: M.l - 8, y: sy(k) + 4, "text-anchor": "end", fill: "#8a8f98", "font-size": 11 }, svg, k);
+  }
+  for (const m of [1, 10, 100, 1e3, 1e4, 1e5]) {
+    el("line", { y1: M.t, y2: H - M.b, x1: sx(m), x2: sx(m), stroke: "#1c222b" }, svg);
+    el("text", { x: sx(m), y: H - M.b + 18, "text-anchor": "middle", fill: "#8a8f98", "font-size": 11 }, svg, kg(m));
+  }
+  el("text", { x: (W + M.l) / 2, y: H - 6, "text-anchor": "middle", fill: "#8a8f98", "font-size": 12 }, svg, "body mass");
+  el("text", { x: 14, y: (H - M.b) / 2, transform: `rotate(-90 14 ${(H - M.b) / 2})`, "text-anchor": "middle",
+    fill: "#8a8f98", "font-size": 12 }, svg, "kelvin above the water (log)");
+  el("rect", { x: M.l, width: W - M.l - M.r, y: sy(ceiling(0.25)), height: sy(0.05) - sy(ceiling(0.25)), fill: "url(#band)" }, svg);
+  el("text", { x: M.l + 8, y: sy(0.12), fill: "#5ec8d8", "font-size": 11.5, opacity: 0.75 }, svg, "most fish live here, at the water's temperature");
+  for (const a of DATA.animals) {
+    const col = a.group === "air" ? "#9fb7d9" : a.scope === "blood" ? "#5ec8d8" : "#f6b73c";
+    const c = el("circle", { cx: sx(a.mass_kg), cy: sy(a.excess_k), r: 4.5, fill: a.group === "fish_unknown" ? "#0f141b" : col,
+      stroke: col, "stroke-width": 1.5, opacity: 0.9 }, svg);
+    el("title", {}, c, `${a.animal}, ${a.tissue}: ${a.excess_k} K above the water`);
+    const lab = LABELS[a.animal + (a.scope === "blood" ? " blood" : "")];
+    if (lab) el("text", { x: sx(a.mass_kg) + lab[1], y: sy(a.excess_k) + lab[2], "text-anchor": lab[3] || "start",
+      fill: col, "font-size": 11, opacity: 0.9 }, svg, lab[0]);
+  }
+}
+let dyn;
+function drawDynamic(r) {
+  if (dyn) dyn.remove();
+  dyn = el("g", {}, svg);
+  if (S.mode === "gills") {
+    const y = sy(Math.min(r.cap_k, 60));
+    el("line", { x1: M.l, x2: W - M.r, y1: y, y2: y, stroke: S.eff > 0 ? "#f6b73c" : "#5ec8d8", "stroke-width": 2, filter: "url(#glow)" }, dyn);
+    el("text", { x: W - M.r - 6, y: y - 7, "text-anchor": "end", fill: S.eff > 0 ? "#f6b73c" : "#5ec8d8", "font-size": 12 }, dyn,
+      r.cap_k > 60 ? "your gills' ceiling is off the chart" : `your gills' ceiling: ${fmt(r.cap_k, r.cap_k < 10 ? 2 : 1)} K`);
+  }
+  const ok = r.penalty < 1, col = ok ? (S.mode === "lungs" ? "#9fb7d9" : "#5ec8d8") : "#c2513f";
+  const cx = sx(S.mass), cy = sy(Math.max(r.dt, 0.05));
+  el("circle", { cx, cy, r: 16, fill: col, opacity: 0.18, filter: "url(#glow)" }, dyn);
+  el("circle", { cx, cy, r: 7, fill: col }, dyn);
+  const right = cx < W - 180;
+  el("text", { x: cx + (right ? 14 : -14), y: cy - 10, "text-anchor": right ? "start" : "end", fill: "#e8e4da",
+    "font-size": 13, "font-weight": 600 }, dyn, "your animal");
+}
+
+// ---- model --------------------------------------------------------------------------------
+function compute() {
+  const dt = Math.max(S.tb - S.tw, 0);
+  const fmr = 2.5 * kleiber(S.mass);
+  const vo2 = fmr / Q_OX;                              // mL O2 per s
+  const c0 = ceiling(S.cap);
+  const r = { dt, fmr, vo2, c0 };
+  if (S.mode === "gills") {
+    r.cap_k = c0 / (1 - S.eff);
+    r.penalty = dt * (1 - S.eff) / c0;
+    r.need = dt > c0 ? 1 - c0 / dt : 0;
+    r.area = vo2 * 1.429 * 3600 / FLUX;                // m2
+    r.flow = vo2 / (o2sea(S.tw) * EXTRACT_WATER) / 1e6; // m3 per s
+  } else {
+    r.penalty = lungPenalty(S.tb, S.tw);
+    r.area = 0; r.flow = vo2 / O2_AIR / 1e6;           // m3 of air per s
+  }
+  r.skin = 0.1 * S.mass ** (2 / 3);
+  r.lost = r.penalty * fmr;
+  return r;
+}
+
+function render() {
+  const r = compute();
+  $("mass-o").textContent = kg(S.mass);
+  $("tw-o").textContent = fmt(S.tw, 1) + " °C";
+  $("tb-o").textContent = fmt(S.tb, 1) + " °C";
+  $("cap-o").textContent = fmt(S.cap, 3);
+  $("eff-o").textContent = fmt(S.eff * 100, 1) + "%";
+  const gills = S.mode === "gills";
+  $("cap-c").classList.toggle("off", !gills);
+  $("eff-c").classList.toggle("off", !gills);
+  $("cap").disabled = $("eff").disabled = !gills;
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.mode)));
+
+  // verdict
+  const v = $("verdict");
+  if (r.dt < 0.01) v.innerHTML = `A body at the water's temperature costs nothing to keep. <span class="ok">Every fish can do this.</span>`;
+  else if (r.penalty >= 0.95 && r.penalty < 1)
+    v.innerHTML = `<span class="ok"><b>Only just ${fmt(r.dt, 1)} K warm.</b></span> Breathing throws away almost all the heat it makes, so the skin must lose none. This is the exchanger the measured animal implies at the least.`;
+  else if (r.penalty < 1)
+    v.innerHTML = `<span class="ok"><b>It can stay ${fmt(r.dt, 1)} K warm.</b></span> Breathing throws away ${fmt(r.penalty * 100, r.penalty < 0.1 ? 1 : 0)}% of the heat it makes; the rest is left for the skin to lose.`;
+  else
+    v.innerHTML = `<span class="bad"><b>It cannot stay ${fmt(r.dt, 1)} K warm.</b></span> Its gills would throw away ${fmt(r.penalty, r.penalty < 10 ? 1 : 0)} times the heat it makes, and eating more only makes it worse: more food needs more oxygen, which needs more blood through the gills.`;
+
+  // budget bars: the burned bar is fixed; the loss bar uses the same scale and may leave the page
+  const track = $("burn").parentElement.getBoundingClientRect().width;
+  const unit = Math.min(track * 0.42, 340);
+  $("burn").style.width = unit + "px";
+  const lw = r.penalty * unit;
+  const lose = $("lose");
+  lose.classList.toggle("lungs", !gills);
+  lose.style.width = Math.max(lw, 2) + "px";
+  lose.style.setProperty("--even", unit + "px");
+  $("even").style.left = unit + "px";
+  const room = window.innerWidth - lose.parentElement.getBoundingClientRect().left;
+  const over = $("over");
+  if (lw > room) { over.style.display = "block"; over.textContent = `×${fmt(r.penalty, r.penalty < 10 ? 1 : 0)} and still going`; }
+  else over.style.display = "none";
+  $("burn-v").textContent = watts(r.fmr);
+  $("lose-v").textContent = watts(r.lost);
+
+  // facts
+  if (gills) {
+    $("f-ceil").textContent = fmt(r.cap_k, r.cap_k < 10 ? 2 : 1) + " K";
+    $("f-ceil-s").textContent = S.eff > 0 ? `${fmt(r.c0, 2)} K with no exchanger` : "no exchanger: the plain ceiling";
+    $("f-need").textContent = r.need > 0 ? fmt(r.need * 100, 1) + "%" : "none";
+    $("f-area-k").textContent = "Gill area needed";
+    $("f-area").textContent = fmt(r.area, r.area < 10 ? 2 : 0) + " m²";
+    $("f-area-s").textContent = `${fmt(r.area / r.skin, 0)} times its skin`;
+    $("f-flow-k").textContent = "Water pumped over the gills";
+    $("f-flow").textContent = r.flow >= 0.1 ? fmt(r.flow, 2) + " m³/s" : fmt(r.flow * 1000, r.flow < 1e-3 ? 3 : 1) + " L/s";
+    $("f-flow-s").textContent = `water at ${fmt(S.tw, 1)} °C holds ${fmt(o2sea(S.tw) * 1000, 1)} mL O₂ per litre`;
+  } else {
+    $("f-ceil").textContent = "none near";
+    $("f-ceil-s").textContent = "lungs lose heat only to warm and wet the air";
+    $("f-need").textContent = "none";
+    $("f-area-k").textContent = "Gill area needed";
+    $("f-area").textContent = "0 m²";
+    $("f-area-s").textContent = "it holds its breath instead";
+    $("f-flow-k").textContent = "Air breathed";
+    const lps = r.flow * 1000;
+    $("f-flow").textContent = fmt(lps, lps < 1 ? 2 : 1) + " L/s";
+    $("f-flow-s").textContent = "taking 6% of each breath as oxygen";
+  }
+  drawDynamic(r);
+}
+
+// ---- controls -----------------------------------------------------------------------------
+function syncInputs() {
+  $("mass").value = Math.log10(S.mass); $("tw").value = S.tw; $("tb").value = S.tb; $("cap").value = S.cap; $("eff").value = S.eff;
+}
+function pressPreset(name) {
+  document.querySelectorAll("#presets button").forEach(b => b.setAttribute("aria-pressed", String(b.textContent === name)));
+}
+for (const p of PRESETS) {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = p.name; b.setAttribute("aria-pressed", "false");
+  b.onclick = () => { Object.assign(S, p); syncInputs(); pressPreset(p.name); render(); };
+  $("presets").appendChild(b);
+}
+const bind = (id, f) => $(id).addEventListener("input", e => { f(+e.target.value); pressPreset(""); render(); });
+bind("mass", v => S.mass = 10 ** v);
+bind("tw", v => { S.tw = v; if (S.tb < v) { S.tb = v; $("tb").value = v; } });
+bind("tb", v => S.tb = Math.max(v, S.tw));
+bind("cap", v => S.cap = v);
+bind("eff", v => S.eff = v);
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { S.mode = b.dataset.v; pressPreset(""); render(); });
+window.addEventListener("resize", render);
+drawStatic(); syncInputs(); pressPreset(S.name); render();
+</script>
+</body>
+</html>

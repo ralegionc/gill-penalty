@@ -1,0 +1,16 @@
+animal,sci,group,mass_kg,tissue,scope,excess_k,excess_lo_k,excess_hi_k,capacity,capacity_lo,capacity_hi,steady,source,note
+Atlantic bluefin tuna,Thunnus thynnus,fish_rete,250.0,red muscle,regional,21.0,,,0.18,0.15,0.22,yes,"Carey and Lawson 1973, Comp Biochem Physiol 44A:375; Block 2011, Encyclopedia of Fish Physiology 3:1914",up to 21 K in cold water; mass is a typical adult
+Salmon shark,Lamna ditropis,fish_rete,150.0,stomach,regional,21.2,,,0.12,0.08,0.16,yes,"Goldman et al. 2004, Environ Biol Fish 71:403, doi:10.1007/s10641-004-6588-9",largest stomach-water gap in four tracked sharks; stomach held at 25.0 to 25.7 C
+Swordfish,Xiphias gladius,fish_rete,100.0,brain and eyes,cranial,15.0,10.0,,0.1,0.07,0.13,yes,"Carey 1982, Science 216:1327; Block 2011",heater organ under the brain plus a carotid rete
+Opah,Lampris guttatus,fish_rete,40.0,pectoral muscle,whole_body,4.8,,,0.1,0.07,0.13,yes,"Wegner et al. 2015, Science 348:786, doi:10.1126/science.aaa8902",whole-body endotherm; heart 3.2 K and brain 6.0 K above water in fresh fish; gill retia
+Skipjack tuna (lab),Katsuwonus pelamis,fish_rete,1.5,red muscle,regional,2.6,1.2,,0.18,0.15,0.22,yes,"Neill, Chang and Dizon 1976, Environ Biol Fish 1:61",free-swimming 1.2 and 1.8 kg fish in tanks
+Skipjack tuna (lab),Katsuwonus pelamis,fish_rete,1.5,blood returning to the heart,blood,0.29,0.09,0.74,0.18,0.15,0.22,yes,"Neill, Chang and Dizon 1976, Environ Biol Fish 1:61",venous excess 0.075 to 0.285 of red-muscle excess (median 0.11): 0.11 x 2.6 K shown; range 0.075 x 1.2 to 0.285 x 2.6 K
+Basking shark,Cetorhinus maximus,fish_unknown,4000.0,white muscle under the skin,regional,1.5,1.0,,0.06,0.04,0.08,unclear,"Dolton et al. 2023, Endang Species Res 51:227",red muscle placed centrally like lamnids; no heat exchanger reported
+Leatherback turtle,Dermochelys coriacea,air,400.0,core,whole_body,18.0,,,,,,yes,"Frair, Ackman and Mrosovsky 1972, Science 177:791",25.5 C in 7.5 C water
+Weddell seal,Leptonychotes weddellii,air,450.0,core,whole_body,38.8,,,,,,yes,typical mammalian core (37 C) in Antarctic water (-1.8 C),"illustrative: habitat water, not a paired measurement"
+Emperor penguin,Aptenodytes forsteri,air,30.0,core,whole_body,39.8,,,,,,yes,typical avian core (38 C) in Antarctic water (-1.8 C),illustrative
+Sea otter,Enhydra lutris,air,30.0,core,whole_body,27.5,,,,,,yes,typical mammalian core (37.5 C) in 10 C water,illustrative
+Harbour porpoise,Phocoena phocoena,air,50.0,core,whole_body,26.5,,,,,,yes,typical mammalian core (36.5 C) in 10 C water,illustrative
+Bottlenose dolphin,Tursiops truncatus,air,200.0,core,whole_body,21.5,,,,,,yes,typical mammalian core (36.5 C) in 15 C water,illustrative
+Bowhead whale,Balaena mysticetus,air,75000.0,core,whole_body,37.5,,,,,,yes,typical mammalian core (36 C) in Arctic water (-1.5 C),illustrative
+Blue whale,Balaenoptera musculus,air,100000.0,core,whole_body,26.0,,,,,,yes,typical mammalian core (36 C) in 10 C water,illustrative

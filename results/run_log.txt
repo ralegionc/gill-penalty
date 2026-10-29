@@ -1,0 +1,40 @@
+gill records 308, species 126, pooled slope 0.908
+species slopes: n=32, median 0.785 [0.714, 0.874]
+active O2 flux: 16 species; top 8:
+                   sci  mass_g  temp_c  vo2_mg_kg_h  flux_mg_m2_h
+Catostomus commersonii   190.0    20.0       658.00   5308.722779
+    Ameiurus nebulosus   333.0    20.0       496.00   4736.671594
+     Carassius auratus    66.0    15.0       629.00   4519.276400
+   Oncorhynchus mykiss     6.5    20.0      1313.50   4508.750368
+       Cyprinus carpio   250.0    20.0       865.00   4429.634799
+ Pleuronectes platessa   281.0    15.0       183.00   1925.688325
+       Limanda limanda   396.0    15.0       171.38   1548.473828
+        Sander vitreus   226.0    23.0       181.00   1129.277284
+mass_kg                      1e+05
+t_body                       36
+t_water                      10
+excess_k                     26
+fmr_kw                       47.66
+vo2_l_s                      2.432
+blood_l_s                    12.16
+water_m3_s                   0.6414
+gill_area_m2                 2,356
+skin_area_m2                 215.4
+best_flux_mg_m2_h            5,309
+ceiling_k                    1.059
+plain_gill_heat_loss_mw      1.17
+plain_penalty                24.54
+rete_breakeven               0.9593
+rete_half                    0.9796
+lung_penalty                 0.07124
+               animal                       tissue  excess_k  ceiling_k  times_ceiling  rete_implied
+Atlantic bluefin tuna                   red muscle     21.00      0.954         22.024         0.955
+         Salmon shark                      stomach     21.20      0.636         33.350         0.970
+            Swordfish               brain and eyes     15.00      0.530         28.316         0.965
+                 Opah              pectoral muscle      4.80      0.530          9.061         0.890
+  Skipjack tuna (lab)                   red muscle      2.60      0.954          2.727         0.633
+  Skipjack tuna (lab) blood returning to the heart      0.29      0.954          0.304         0.000
+        Basking shark  white muscle under the skin      1.50      0.318          4.719         0.788
+
+basking shark: 1.0-1.5 K vs ceiling 0.32 K (most generous 0.42); implies an exchanger of at least 0.58 or heat stored from warmer water
+wrote docs/index.html, 24 kB
